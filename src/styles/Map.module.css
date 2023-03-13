@@ -1,0 +1,9 @@
+.attribution {
+  /* width: 100%;
+  height: 100%;
+  padding-left: 1000; */
+}
+
+.attribution .mapboxgl-ctrl-bottom-left {
+  padding-left: 30rem !important;
+}
