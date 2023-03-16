@@ -3,12 +3,12 @@ import asyncQueryHelper from '../helper';
 
 const pickedFields = [
   'geocodes',
-  'location',
+  // 'location',
   'fsq_id',
   'name',
   'rating',
   'photos',
-  'hours',
+  // 'hours',
   'price',
   'date_closed',
   'stats',

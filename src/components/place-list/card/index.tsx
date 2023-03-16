@@ -15,21 +15,6 @@ interface Props {
 }
 
 const PlaceCard: FC<Props> = ({ place, onPin, isPinned, onCardClick }) => {
-  // const { 'explore-map': map } = useMap();
-
-  // const handleOnResultClick = (): void => {
-  //   if (place.geocodes !== undefined) {
-  //     map?.flyTo({
-  //       center: new mapboxgl.LngLat(
-  //         place.geocodes.main.longitude,
-  //         place.geocodes.main.latitude
-  //       ),
-  //       padding: getAdjustedPaddingOptions(),
-  //       zoom: 19,
-  //     });
-  //   }
-  // };
-
   const photoSource = useMemo(() => {
     if (place.photos !== undefined) {
       if (place.photos[0] === undefined) {

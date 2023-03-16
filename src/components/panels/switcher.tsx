@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  type FC,
-  type Dispatch,
-  type SetStateAction,
-  useEffect,
-} from 'react';
+import React, { useState, type FC, useEffect } from 'react';
 import PanelWrapper from './wrapper';
 import { TabKey } from '../nav/tab-bar';
 import { type GeoJSONSource, useMap } from 'react-map-gl';
@@ -25,10 +19,9 @@ function bboxToLngLatBounds(box: BBox): mapboxgl.LngLatBounds {
 
 interface Props {
   isOpen: boolean;
-  setIsOpen: Dispatch<SetStateAction<boolean>>;
 }
 
-const PanelSwitcher: FC<Props> = ({ isOpen, setIsOpen }) => {
+const PanelSwitcher: FC<Props> = ({ isOpen }) => {
   const { 'explore-map': map } = useMap();
   const {
     state: {
@@ -39,6 +32,8 @@ const PanelSwitcher: FC<Props> = ({ isOpen, setIsOpen }) => {
     dispatch,
   } = usePlaces();
   const [selectedTab, setSelectedTab] = useState<TabKey>(TabKey.SEARCH);
+
+  console.log(pinnedPlaces);
 
   const handleOnPin = (place: FSQPlace): void => {
     dispatch({
@@ -179,7 +174,7 @@ const PanelSwitcher: FC<Props> = ({ isOpen, setIsOpen }) => {
             pinnedPlaces={pinnedPlaces}
             places={places}
             isLoading={isLoading}
-            onPin={handleOnCardClick}
+            onPin={handleOnPin}
           />
         </PanelWrapper>
       );

@@ -1,18 +1,11 @@
-import React, {
-  type Dispatch,
-  type SetStateAction,
-  type FC,
-  useState,
-  useMemo,
-  useEffect,
-} from 'react';
+import React, { type FC, useState, useMemo, useEffect } from 'react';
 
 interface Props {
   isOpen: boolean;
-  setIsOpen: Dispatch<SetStateAction<boolean>>;
+  onTogglePanel: () => void;
 }
 
-const CollapsePanelButton: FC<Props> = ({ isOpen, setIsOpen }) => {
+const CollapsePanelButton: FC<Props> = ({ isOpen, onTogglePanel }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [offset, setOffset] = useState(32);
 
@@ -45,9 +38,7 @@ const CollapsePanelButton: FC<Props> = ({ isOpen, setIsOpen }) => {
       onMouseLeave={() => {
         setIsHovered(false);
       }}
-      onClick={() => {
-        setIsOpen((prev) => !prev);
-      }}
+      onClick={onTogglePanel}
       id="collapse-panel-button"
       className="absolute z-30 bg-light-gray px-4 py-2 rounded-full shadow-lg transition-all"
       style={{

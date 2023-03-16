@@ -1,9 +1,11 @@
+import { PanelTabKey } from '@/models/panel';
 import {
   type AllPlaceActions,
   contextReducer,
   pinnedPlacesReducer,
   placesReducer,
   type PlacesReducer,
+  panelReducer,
 } from '@/reducer/placeReducer';
 import React, {
   type Dispatch,
@@ -17,10 +19,18 @@ import React, {
 const initialState: PlacesReducer = {
   pinnedPlaces: [],
   results: {
+    activePlace: null,
     places: [],
     isLoading: false,
   },
   context: null,
+  panel: {
+    isExpanded: true,
+    currentTab: {
+      value: PanelTabKey.SEARCH,
+      label: 'Search',
+    },
+  },
 };
 
 interface PlaceContext {
@@ -34,12 +44,13 @@ const PlacesContext = createContext<PlaceContext>({
 });
 
 const mainReducer = (
-  { results, pinnedPlaces, context }: PlacesReducer,
+  { results, pinnedPlaces, context, panel }: PlacesReducer,
   action: AllPlaceActions
 ): PlacesReducer => ({
   results: placesReducer(results, action),
   pinnedPlaces: pinnedPlacesReducer(pinnedPlaces, action),
   context: contextReducer(context, action),
+  panel: panelReducer(panel, action),
 });
 
 const PlaceProvider: FC<PropsWithChildren> = ({ children }) => {

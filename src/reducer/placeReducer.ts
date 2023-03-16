@@ -1,6 +1,7 @@
 // import { type Place } from '@/endpoints/places/getPlaces';
 
 import { type FSQContext, type FSQPlace } from '@/models/foursquare';
+import { type PanelTab } from '@/models/panel';
 
 type ActionMap<M extends Record<string, any>> = {
   [Key in keyof M]: M[Key] extends undefined
@@ -23,9 +24,17 @@ export interface PlacesReducer {
   };
   pinnedPlaces: FSQPlace[];
   context: FSQContext | null;
+  panel: {
+    isExpanded: boolean;
+    currentTab: PanelTab;
+  };
 }
 
 export enum PlaceActionTypes {
+  // PANEL
+  CHANGE_TAB = 'CHANGE_TAB',
+  TOGGLE_PANEL = 'TOGGLE_PANEL',
+
   // Places
   INITIATING_SEARCH = 'INITIATING_SEARCH',
   SET_PLACES = 'SET_PLACES',
@@ -76,16 +85,24 @@ interface ContextPayload {
   };
 }
 
+interface PanelPayload {
+  [PlaceActionTypes.CHANGE_TAB]: PanelTab;
+  [PlaceActionTypes.TOGGLE_PANEL]: never;
+}
+
 export type PlaceActions = Action<PlacePayload>;
 
 export type PinnedPlacesActions = Action<PinnedPlacePayload>;
 
 export type ContextActions = Action<ContextPayload>;
 
+export type PanelActions = Action<PanelPayload>;
+
 export type AllPlaceActions =
   | PlaceActions
   | PinnedPlacesActions
-  | ContextActions;
+  | ContextActions
+  | PanelActions;
 
 export const placesReducer = (
   state: PlacesReducer['results'],
@@ -136,6 +153,7 @@ export const pinnedPlacesReducer = (
 ): PlacesReducer['pinnedPlaces'] => {
   switch (action.type) {
     case PlaceActionTypes.PIN_UNPIN_PLACE: {
+      console.log(state, action.payload);
       if (
         state.find((item) => item.fsq_id === action.payload.fsq_id) !==
         undefined
@@ -161,6 +179,29 @@ export const contextReducer = (
     }
     case PlaceActionTypes.CLEAR_CONTEXT: {
       return null;
+    }
+    default: {
+      return state;
+    }
+  }
+};
+
+export const panelReducer = (
+  state: PlacesReducer['panel'],
+  action: AllPlaceActions
+): PlacesReducer['panel'] => {
+  switch (action.type) {
+    case PlaceActionTypes.CHANGE_TAB: {
+      return {
+        ...state,
+        currentTab: action.payload,
+      };
+    }
+    case PlaceActionTypes.TOGGLE_PANEL: {
+      return {
+        ...state,
+        isExpanded: !state.isExpanded,
+      };
     }
     default: {
       return state;

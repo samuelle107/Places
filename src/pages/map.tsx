@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import Map, { type CircleLayer, Source, Layer } from 'react-map-gl';
-import React, { useState, type FC } from 'react';
+import React, { type FC } from 'react';
 
 import clsx from 'clsx';
 import PanelSwitcher from '@/components/panels/switcher';
@@ -8,6 +8,7 @@ import CollapsePanelButton from '@/components/collapse-button';
 import Header from '@/components/header';
 import PlaceDetails from '@/components/place-details';
 import { usePlaces } from '@/context/place-context';
+import { PlaceActionTypes } from '@/reducer/placeReducer';
 
 const placesLayer: CircleLayer = {
   id: 'places',
@@ -53,12 +54,12 @@ const contextPlaceLayer: CircleLayer = {
 };
 
 const ExplorePage: FC = () => {
-  const [isOpen, setIsOpen] = useState(true);
-
   const {
     state: {
       results: { activePlace },
+      panel: { isExpanded },
     },
+    dispatch,
   } = usePlaces();
 
   return (
@@ -73,7 +74,7 @@ const ExplorePage: FC = () => {
       <main>
         <div
           className={clsx(
-            isOpen && 'attribution',
+            isExpanded && 'attribution',
             'w-screen h-screen max-h-screen max-w-[100wh] flex flex-col'
           )}
         >
@@ -107,11 +108,28 @@ const ExplorePage: FC = () => {
               </>
             </Map>
 
-            <PanelSwitcher isOpen={isOpen} setIsOpen={setIsOpen} />
+            <PanelSwitcher isOpen={isExpanded} />
 
-            <CollapsePanelButton isOpen={isOpen} setIsOpen={setIsOpen} />
+            <CollapsePanelButton
+              isOpen={isExpanded}
+              onTogglePanel={() => {
+                dispatch({
+                  type: PlaceActionTypes.TOGGLE_PANEL,
+                });
+              }}
+            />
 
-            {activePlace !== null && <PlaceDetails place={activePlace} />}
+            {activePlace !== null && (
+              <PlaceDetails
+                isSidePanelExpanded={isExpanded}
+                place={activePlace}
+                onDetailsClose={() => {
+                  dispatch({
+                    type: PlaceActionTypes.CLOSE_PLACE_DETAILS,
+                  });
+                }}
+              />
+            )}
           </div>
         </div>
       </main>

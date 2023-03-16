@@ -135,7 +135,7 @@ interface FSQRichPlace {
     seasonal: [
       {
         closed: true;
-        end_date: '2022-03-22';
+        end_date: string;
         hours: [
           {
             close: string;
@@ -143,7 +143,7 @@ interface FSQRichPlace {
             open: string;
           }
         ];
-        start_date: '2022-03-22';
+        start_date: string;
       }
     ];
   };
@@ -211,17 +211,18 @@ interface FSQRichPlace {
   tastes: string[];
   tel: string;
   timezone: string;
-  tips: [
-    {
-      id: string;
-      created_at: '2022-03-22T18:52:03.724Z';
-      text: string;
-      url: string;
-      lang: string;
-      agree_count: number;
-      disagree_count: number;
-    }
-  ];
+  tips: Array<
+    | {
+        id: string;
+        created_at: string;
+        text: string;
+        url: string;
+        lang: string;
+        agree_count: number;
+        disagree_count: number;
+      }
+    | undefined
+  >;
   verified: true;
   website: string;
 }

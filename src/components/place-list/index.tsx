@@ -18,7 +18,6 @@ const PlaceList: FC<Props> = ({
   onPin,
   onCardClick,
 }) => {
-  console.log('re-rendered');
   if (isLoading === true) {
     return <>Loading</>;
   }
