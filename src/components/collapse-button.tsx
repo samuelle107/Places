@@ -40,14 +40,18 @@ const CollapsePanelButton: FC<Props> = ({ isOpen, onTogglePanel }) => {
       }}
       onClick={onTogglePanel}
       id="collapse-panel-button"
-      className="absolute z-30 bg-light-gray px-4 py-2 rounded-full shadow-lg transition-all"
+      className="absolute z-30 bg-light-gray px-4 py-2 rounded-full shadow-lg transition-all flex items-center justify-center"
       style={{
         top: 32,
         left: offset,
       }}
     >
-      <span className="font-medium">
-        {isOpen ? '<' : '>'} {buttonText}
+      <span className="font-medium flex justify-center items-center">
+        <span className="material-icons">
+          {isOpen ? 'chevron_left' : 'chevron_right'}
+        </span>
+
+        {buttonText}
       </span>
     </button>
   );
