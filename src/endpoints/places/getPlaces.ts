@@ -28,8 +28,6 @@ interface PlacesResponse {
   results: Array<Pick<FSQPlace, PartialFSQPlace>>;
 }
 
-const proxy = 'https://cors-anywhere.herokuapp.com/';
-
 export default async function getPlaces(
   params: Record<string, string>,
   signal?: AbortSignal,
@@ -43,19 +41,13 @@ export default async function getPlaces(
     offset: '10',
     ...params,
   });
-  // TODO: This is dumb af. Make own proxy
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-  const url = `${proxy}https://api.foursquare.com/v3/places/search?${searchParams}`;
+  const url = `api/places?${searchParams}`;
   const headers: PlacesHeaders[] = ['link'];
   const res = await asyncQueryHelper<PlacesResponse, PlacesHeaders>(
     url,
     {
       signal,
-      method: 'GET',
-      mode: 'cors',
-      headers: new Headers({
-        Authorization: process.env.NEXT_PUBLIC_FSQ_API_TOKEN ?? '',
-      }),
     },
     headers
   );
