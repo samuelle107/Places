@@ -2,6 +2,7 @@ import getPlace from '@/endpoints/places/getPlace';
 import { type FSQPlace } from '@/models/foursquare';
 import clsx from 'clsx';
 import React, { useEffect, type FC, useState, memo } from 'react';
+import { useMap } from 'react-map-gl';
 
 import CardBody from '../place-list/card/body';
 
@@ -18,9 +19,21 @@ const PlaceDetails: FC<Props> = ({
   place,
   onDetailsClose,
 }) => {
+  const { 'explore-map': map } = useMap();
+
   const [leftOffset, setLeftOffset] = useState(OFFSET);
   const [isLoading, setIsLoading] = useState(false);
   const [placeDetails, setPlaceDetails] = useState<FSQPlace | null>(null);
+
+  const handleZoomToLocation = (): void => {
+    map?.flyTo({
+      center: [
+        place.geocodes?.roof.longitude ?? 0,
+        place.geocodes?.roof.latitude ?? 0,
+      ],
+      zoom: 20,
+    });
+  };
 
   /** Calculate offset */
   useEffect(() => {
@@ -40,6 +53,8 @@ const PlaceDetails: FC<Props> = ({
     if (place.fsq_id !== undefined) {
       setIsLoading(true);
 
+      setPlaceDetails(null);
+
       getPlace(place.fsq_id, controller.signal)
         .then((res) => {
           setPlaceDetails(res.data);
@@ -58,15 +73,14 @@ const PlaceDetails: FC<Props> = ({
     };
   }, [place]);
 
-  console.log(placeDetails);
-  if (isLoading) {
-    return <>Loading</>;
-  }
+  // if (isLoading) {
+  //   return <>Loading</>;
+  // }
 
   return (
     <div
       className={clsx(
-        'absolute right-9 bottom-9 z-10',
+        'absolute bottom-9 z-10 min-w-[500px] min-h-[200px]',
         'bg-white rounded-lg p-2 transition-all shadow-xl max-h-[400px] overflow-auto'
       )}
       style={{
@@ -75,9 +89,7 @@ const PlaceDetails: FC<Props> = ({
     >
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h5 className="font-semibold text-sm text-gray-800">
-          {placeDetails?.name}
-        </h5>
+        <h5 className="font-semibold text-sm text-gray-800">{place?.name}</h5>
 
         {/* Close button */}
         <button
@@ -88,7 +100,20 @@ const PlaceDetails: FC<Props> = ({
         </button>
       </div>
 
-      {placeDetails != null && <CardBody place={placeDetails} />}
+      {placeDetails !== null && (
+        <>
+          <CardBody place={placeDetails} />
+
+          <div className=" h-[1px] w-full bg-gray-200 my-4" />
+
+          <button
+            onClick={handleZoomToLocation}
+            className="bg-gray-800 px-3 py-2 rounded text-white text-sm font-semibold"
+          >
+            Zoom to Location
+          </button>
+        </>
+      )}
     </div>
   );
 };
