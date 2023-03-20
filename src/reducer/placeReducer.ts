@@ -16,11 +16,17 @@ type ActionMap<M extends Record<string, any>> = {
 
 type Action<T extends Record<string, any>> = ActionMap<T>[keyof ActionMap<T>];
 
+type HTTPLink = {
+  next: Record<string, string>;
+} | null;
+
 export interface PlacesReducer {
   results: {
     places: FSQPlace[];
     isLoading: boolean;
+    isLoadingMorePlaces: boolean;
     activePlace: FSQPlace | null;
+    link: HTTPLink;
   };
   pinnedPlaces: FSQPlace[];
   context: FSQContext | null;
@@ -37,8 +43,9 @@ export enum PlaceActionTypes {
 
   // Places
   INITIATING_SEARCH = 'INITIATING_SEARCH',
+  LOADING_MORE_PLACES = 'LOADING_MORE_PLACES',
   SET_PLACES = 'SET_PLACES',
-  ADD_PLACES = 'ADD_PLACES',
+  SEE_MORE_PLACES = 'ADD_PLACES',
   CLEAR_PLACES = 'CLEAR_PLACES',
 
   // Place
@@ -57,14 +64,20 @@ export enum PlaceActionTypes {
 }
 
 interface PlacePayload {
-  [PlaceActionTypes.SET_PLACES]: FSQPlace[];
-  [PlaceActionTypes.ADD_PLACES]: FSQPlace[];
+  // [PlaceActionTypes.SET_PLACES]: FSQPlace[];
+  [PlaceActionTypes.SEE_MORE_PLACES]: {
+    places: FSQPlace[];
+    context: FSQContext;
+    link: HTTPLink;
+  };
   [PlaceActionTypes.FINISH_SEARCH]: {
     places: FSQPlace[];
     context: FSQContext;
+    link: HTTPLink;
   };
 
   [PlaceActionTypes.INITIATING_SEARCH]: never;
+  [PlaceActionTypes.LOADING_MORE_PLACES]: never;
   [PlaceActionTypes.CLEAR_PLACES]: never;
 
   [PlaceActionTypes.OPEN_PLACE_DETAILS]: FSQPlace;
@@ -82,6 +95,7 @@ interface ContextPayload {
   [PlaceActionTypes.FINISH_SEARCH]: {
     places: FSQPlace[];
     context: FSQContext;
+    link: HTTPLink;
   };
 }
 
@@ -113,13 +127,31 @@ export const placesReducer = (
       return {
         ...state,
         isLoading: true,
+        link: null,
+        activePlace: null,
+      };
+    }
+    case PlaceActionTypes.LOADING_MORE_PLACES: {
+      return {
+        ...state,
+        isLoadingMorePlaces: true,
       };
     }
     case PlaceActionTypes.FINISH_SEARCH: {
       return {
         ...state,
         places: action.payload.places,
+        link: action.payload.link,
         isLoading: false,
+      };
+    }
+    case PlaceActionTypes.SEE_MORE_PLACES: {
+      return {
+        ...state,
+        places: [...state.places, ...action.payload.places],
+        link: action.payload.link,
+        isLoading: false,
+        isLoadingMorePlaces: false,
       };
     }
     case PlaceActionTypes.CLEAR_PLACES: {
@@ -153,7 +185,6 @@ export const pinnedPlacesReducer = (
 ): PlacesReducer['pinnedPlaces'] => {
   switch (action.type) {
     case PlaceActionTypes.PIN_UNPIN_PLACE: {
-      console.log(state, action.payload);
       if (
         state.find((item) => item.fsq_id === action.payload.fsq_id) !==
         undefined

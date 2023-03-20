@@ -19,9 +19,11 @@ import React, {
 const initialState: PlacesReducer = {
   pinnedPlaces: [],
   results: {
+    isLoadingMorePlaces: false,
     activePlace: null,
     places: [],
     isLoading: false,
+    link: null,
   },
   context: null,
   panel: {
