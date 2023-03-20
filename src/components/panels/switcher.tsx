@@ -10,6 +10,7 @@ import { type BBox, type Feature, type FeatureCollection } from 'geojson';
 import circle from '@turf/circle';
 import mapboxgl from 'mapbox-gl';
 import bbox from '@turf/bbox';
+import getPlaces from '@/endpoints/places/getPlaces';
 
 function bboxToLngLatBounds(box: BBox): mapboxgl.LngLatBounds {
   const [lng1, lat1, lng2, lat2] = box;
@@ -27,13 +28,13 @@ const PanelSwitcher: FC<Props> = ({ isOpen }) => {
     state: {
       pinnedPlaces,
       context,
-      results: { places, isLoading },
+      results: { places, isLoading, link, isLoadingMorePlaces },
     },
     dispatch,
   } = usePlaces();
   const [selectedTab, setSelectedTab] = useState<TabKey>(TabKey.SEARCH);
 
-  console.log(pinnedPlaces);
+  console.log(isLoadingMorePlaces);
 
   const handleOnPin = (place: FSQPlace): void => {
     dispatch({
@@ -47,6 +48,31 @@ const PanelSwitcher: FC<Props> = ({ isOpen }) => {
       type: PlaceActionTypes.OPEN_PLACE_DETAILS,
       payload: place,
     });
+  };
+
+  const handleSeeMore = (): void => {
+    if (link === null) return;
+
+    const { rel, url, ...params } = link.next;
+
+    dispatch({
+      type: PlaceActionTypes.LOADING_MORE_PLACES,
+    });
+
+    getPlaces(params, undefined)
+      .then((res) => {
+        dispatch({
+          type: PlaceActionTypes.SEE_MORE_PLACES,
+          payload: {
+            context: res.data.context,
+            link: res.link,
+            places: res.data.results,
+          },
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   /** Hide pins when not in Search view */
@@ -70,18 +96,26 @@ const PanelSwitcher: FC<Props> = ({ isOpen }) => {
       radius / 1000
     );
 
-    (map?.getSource('context') as GeoJSONSource | undefined)?.setData(
-      contextFeature
-    );
+    try {
+      (map?.getSource('context') as GeoJSONSource | undefined)?.setData(
+        contextFeature
+      );
+    } catch (err) {
+      console.error(err);
+    }
 
-    (map?.getSource('context-center') as GeoJSONSource | undefined)?.setData({
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        type: 'Point',
-        coordinates: [center.longitude, center.latitude],
-      },
-    });
+    try {
+      (map?.getSource('context-center') as GeoJSONSource | undefined)?.setData({
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'Point',
+          coordinates: [center.longitude, center.latitude],
+        },
+      });
+    } catch (err) {
+      console.error(err);
+    }
   }, [context, map]);
 
   /** Add place pins to the map */
@@ -103,7 +137,11 @@ const PanelSwitcher: FC<Props> = ({ isOpen }) => {
       })),
     };
 
-    (map?.getSource('places') as GeoJSONSource | undefined)?.setData(fc);
+    try {
+      (map?.getSource('places') as GeoJSONSource | undefined)?.setData(fc);
+    } catch (err) {
+      console.error(err);
+    }
 
     if (places.length !== 0) {
       const bounds = bboxToLngLatBounds(bbox(fc));
@@ -137,7 +175,13 @@ const PanelSwitcher: FC<Props> = ({ isOpen }) => {
       })),
     };
 
-    (map?.getSource('pinned-places') as GeoJSONSource | undefined)?.setData(fc);
+    try {
+      (map?.getSource('pinned-places') as GeoJSONSource | undefined)?.setData(
+        fc
+      );
+    } catch (err) {
+      console.error(err);
+    }
   }, [map, pinnedPlaces]);
 
   switch (selectedTab) {
@@ -176,6 +220,18 @@ const PanelSwitcher: FC<Props> = ({ isOpen }) => {
             isLoading={isLoading}
             onPin={handleOnPin}
           />
+
+          <div className="flex justify-center items-center  px-6 py-4">
+            {link !== null && (
+              <button
+                disabled={isLoadingMorePlaces}
+                onClick={handleSeeMore}
+                className="bg-gray-800 px-4 py-2 rounded text-white w-full"
+              >
+                {isLoadingMorePlaces ? 'Loading...' : 'See More'}
+              </button>
+            )}
+          </div>
         </PanelWrapper>
       );
     }
