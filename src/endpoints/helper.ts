@@ -1,12 +1,27 @@
-async function asyncQueryHelper<T>(
-  url: RequestInfo | URL,
-  init?: RequestInit
-): Promise<T> {
-  const response = await fetch(url, init);
-  console.log(response.headers.get('Link'));
-  const data: T = await response.json();
+export type AsyncQueryResponse<T, H extends string = ''> = Record<H, any> & {
+  data: T;
+};
 
-  return data;
+async function asyncQueryHelper<T, H extends string = ''>(
+  url: RequestInfo | URL,
+  init?: RequestInit,
+  headers: H[] = []
+): Promise<AsyncQueryResponse<T, H>> {
+  const response = await fetch(url, init);
+  const data: T = await response.json();
+  const obj = headers.reduce(
+    (prev, curr) => {
+      return {
+        ...prev,
+        [curr]: response.headers.get(curr),
+      };
+    },
+    {
+      data,
+    }
+  ) as AsyncQueryResponse<T, H>;
+
+  return obj;
 }
 
 export default asyncQueryHelper;
