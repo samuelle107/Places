@@ -1,5 +1,5 @@
 import { type FSQPlace } from '@/models/foursquare';
-import asyncQueryHelper from '../helper';
+import asyncQueryHelper, { type AsyncQueryResponse } from '../helper';
 
 const pickedFields = [
   'geocodes',
@@ -23,9 +23,8 @@ type PartialFSQPlace = (typeof pickedFields)[number];
 
 export default async function getPlace(
   fsqId: string,
-  token: string,
   signal?: AbortSignal
-): Promise<Pick<FSQPlace, PartialFSQPlace>> {
+): Promise<AsyncQueryResponse<Pick<FSQPlace, PartialFSQPlace>>> {
   const fields = pickedFields.join(',');
   const url = `https://api.foursquare.com/v3/places/${fsqId}?fields=${fields}`;
 
@@ -34,7 +33,7 @@ export default async function getPlace(
     method: 'get',
     headers: new Headers({
       Accept: 'application/json',
-      Authorization: token,
+      Authorization: process.env.NEXT_PUBLIC_FSQ_API_TOKEN ?? '',
     }),
   });
 }
