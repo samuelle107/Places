@@ -8,27 +8,19 @@ const Header: FC = () => {
   const { dispatch } = usePlaces();
 
   const handleSearch = async (data: SearchForm): Promise<void> => {
-    const query = Object.entries(data)
-      .map(([k, v]) => `${k}=${String(v)}`)
-      .join(`&`);
-
     try {
       dispatch({
         type: PlaceActionTypes.INITIATING_SEARCH,
       });
 
-      const res = await getPlaces(
-        query,
-        'fsq3wy8eteCb+VjgidlF9NGJp4yCrFgXaJHUfzVMN7SmF0s=',
-        undefined,
-        50
-      );
+      const res = await getPlaces(data, undefined, 50);
 
       dispatch({
         type: PlaceActionTypes.FINISH_SEARCH,
         payload: {
-          context: res.context,
-          places: res.results,
+          context: res.data.context,
+          places: res.data.results,
+          link: res.link,
         },
       });
     } catch (err) {

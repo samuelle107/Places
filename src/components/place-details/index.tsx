@@ -40,13 +40,9 @@ const PlaceDetails: FC<Props> = ({
     if (place.fsq_id !== undefined) {
       setIsLoading(true);
 
-      getPlace(
-        place.fsq_id,
-        'fsq3wy8eteCb+VjgidlF9NGJp4yCrFgXaJHUfzVMN7SmF0s=',
-        controller.signal
-      )
+      getPlace(place.fsq_id, controller.signal)
         .then((res) => {
-          setPlaceDetails(res);
+          setPlaceDetails(res.data);
         })
         .catch((err) => {
           console.log(err);
@@ -62,6 +58,7 @@ const PlaceDetails: FC<Props> = ({
     };
   }, [place]);
 
+  console.log(placeDetails);
   if (isLoading) {
     return <>Loading</>;
   }

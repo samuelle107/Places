@@ -83,7 +83,7 @@ const ExplorePage: FC = () => {
           <div className="relative  flex-grow">
             <Map
               id="explore-map"
-              mapboxAccessToken="pk.eyJ1Ijoic2FtdWVsbGUxMDciLCJhIjoiY2xmMzEwNzBwMGl3ZjN3bzFqNjc3MmMxcSJ9.gsobkjkgySdMv0q6V6aGog"
+              mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_API_TOKEN}
               initialViewState={{
                 longitude: -100,
                 latitude: 40,
