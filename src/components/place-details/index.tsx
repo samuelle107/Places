@@ -73,9 +73,9 @@ const PlaceDetails: FC<Props> = ({
     };
   }, [place]);
 
-  // if (isLoading) {
-  //   return <>Loading</>;
-  // }
+  if (isLoading) {
+    return <>Loading</>;
+  }
 
   return (
     <div
