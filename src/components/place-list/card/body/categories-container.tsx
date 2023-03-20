@@ -10,10 +10,10 @@ const CardCategoriesContainer: FC<Props> = ({ categories }) => {
     <div className="flex flex-wrap gap-x-1 gap-y-2">
       {categories?.map((category) => (
         <div
-          className="bg-gray-200 w-fit px-2 rounded-full py-1"
+          className="bg-gray-200 w-fit px-2 rounded-full py-1 max-w-[80%]"
           key={category?.id}
         >
-          <p className="text-[11px] text-gray-800 font-medium">
+          <p className="text-[11px] text-gray-800 font-medium whitespace-nowrap truncate">
             {category?.name}
           </p>
         </div>

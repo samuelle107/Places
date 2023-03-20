@@ -39,7 +39,9 @@ const PanelWrapper: FC<Props> = ({
             <TabBar selectedTab={selectedTab} onTabChange={onTabChange} />
 
             <div className="flex-grow overflow-hidden">
-              <div className="max-h-full overflow-scroll">{children}</div>
+              <div className="max-h-full overflow-y-scroll h-full">
+                {children}
+              </div>
             </div>
           </div>
         </div>
