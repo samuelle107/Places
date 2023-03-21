@@ -1,22 +1,19 @@
 import React, { useState, type FC, useEffect } from 'react';
 import PanelWrapper from './wrapper';
 import { TabKey } from '../nav/tab-bar';
-import { type GeoJSONSource, useMap } from 'react-map-gl';
+import { useMap } from 'react-map-gl';
 import { usePlaces } from '@/context/place-context';
 import { type FSQPlace } from '@/models/foursquare';
 import { PlaceActionTypes } from '@/reducer/placeReducer';
 import PlaceList from '../place-list';
-import { type BBox, type Feature, type FeatureCollection } from 'geojson';
-import circle from '@turf/circle';
-import mapboxgl from 'mapbox-gl';
+import { type Feature, type FeatureCollection } from 'geojson';
+
 import bbox from '@turf/bbox';
 import getPlaces from '@/endpoints/places/getPlaces';
-
-function bboxToLngLatBounds(box: BBox): mapboxgl.LngLatBounds {
-  const [lng1, lat1, lng2, lat2] = box;
-
-  return new mapboxgl.LngLatBounds([lng1, lat1], [lng2, lat2]);
-}
+import getOptimalPath from '@/endpoints/mapbox/getOptimalPath';
+import { bboxToLngLatBounds, placeToPosition } from '@/util/geospatial';
+import { MapLayerId } from '../../mapbox/layers';
+import { updateMapboxGeoJSONSource } from '@/util/mapbox';
 
 interface Props {
   isOpen: boolean;
@@ -34,7 +31,38 @@ const PanelSwitcher: FC<Props> = ({ isOpen }) => {
   } = usePlaces();
   const [selectedTab, setSelectedTab] = useState<TabKey>(TabKey.SEARCH);
 
-  console.log(isLoadingMorePlaces);
+  const zoomToPinnedPlaces = (places: FSQPlace[]): void => {
+    if (places.length === 0) return;
+
+    const fc: FeatureCollection = {
+      type: 'FeatureCollection',
+      features: places.map((place) => ({
+        id: place.fsq_id,
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'Point',
+          // Remember, coordinates go lng lat
+          coordinates: placeToPosition(place),
+        },
+      })),
+    };
+
+    const bounds = bboxToLngLatBounds(bbox(fc));
+
+    try {
+      map?.fitBounds(bounds, {
+        padding: {
+          bottom: 200,
+          top: 200,
+          left: 400,
+          right: 400,
+        },
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleOnPin = (place: FSQPlace): void => {
     dispatch({
@@ -75,47 +103,102 @@ const PanelSwitcher: FC<Props> = ({ isOpen }) => {
       });
   };
 
-  /** Hide pins when not in Search view */
+  const handleOnCalculatePath = async (): Promise<void> => {
+    const coordinates = pinnedPlaces.map((place) => {
+      return placeToPosition(place);
+    });
+
+    await getOptimalPath(coordinates).then((res) => {
+      const firstTrip = res.data.trips[0];
+
+      if (firstTrip !== undefined) {
+        const feature: Feature = {
+          type: 'Feature',
+          geometry: firstTrip.geometry,
+          properties: {},
+        };
+
+        updateMapboxGeoJSONSource(map, MapLayerId.OPTIMAL_PATH, feature);
+        zoomToPinnedPlaces(pinnedPlaces);
+      }
+    });
+  };
+
+  /**
+   * Hide pins when not in Search view
+   * Show optimal path when in pinned mode
+   * */
+  // TODO: Move to hook
   useEffect(() => {
     try {
-      if (selectedTab !== TabKey.SEARCH) {
-        map?.getMap().setLayoutProperty('places', 'visibility', 'none');
-      } else {
-        map?.getMap().setLayoutProperty('places', 'visibility', 'visible');
+      switch (selectedTab) {
+        case TabKey.SEARCH: {
+          map
+            ?.getMap()
+            .setLayoutProperty(MapLayerId.PLACES, 'visibility', 'visible');
+
+          map
+            ?.getMap()
+            .setLayoutProperty(MapLayerId.OPTIMAL_PATH, 'visibility', 'none');
+
+          map
+            ?.getMap()
+            .setLayoutProperty(
+              MapLayerId.OPTIMAL_PATH_STROKE,
+              'visibility',
+              'none'
+            );
+
+          break;
+        }
+        case TabKey.PINNED: {
+          map
+            ?.getMap()
+            .setLayoutProperty(MapLayerId.PLACES, 'visibility', 'none');
+
+          map
+            ?.getMap()
+            .setLayoutProperty(
+              MapLayerId.OPTIMAL_PATH,
+              'visibility',
+              'visible'
+            );
+
+          map
+            ?.getMap()
+            .setLayoutProperty(
+              MapLayerId.OPTIMAL_PATH_STROKE,
+              'visibility',
+              'visible'
+            );
+
+          break;
+        }
+        default: {
+          break;
+        }
       }
-    } catch (err) {}
+    } catch (err) {
+      console.error(err);
+    }
   }, [map, selectedTab]);
 
+  /** Add context center to map */
   useEffect(() => {
     if (context === null) return;
 
-    const { center, radius } = context.geo_bounds.circle;
+    const { center } = context.geo_bounds.circle;
 
-    const contextFeature: Feature = circle(
-      [center.longitude, center.latitude],
-      radius / 1000
-    );
+    const contextFeature: Feature = {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'Point',
+        coordinates: [center.longitude, center.latitude],
+      },
+    };
 
-    try {
-      (map?.getSource('context') as GeoJSONSource | undefined)?.setData(
-        contextFeature
-      );
-    } catch (err) {
-      console.error(err);
-    }
-
-    try {
-      (map?.getSource('context-center') as GeoJSONSource | undefined)?.setData({
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'Point',
-          coordinates: [center.longitude, center.latitude],
-        },
-      });
-    } catch (err) {
-      console.error(err);
-    }
+    updateMapboxGeoJSONSource(map, MapLayerId.CONTEXT_CENTER, contextFeature);
   }, [context, map]);
 
   /** Add place pins to the map */
@@ -129,31 +212,12 @@ const PanelSwitcher: FC<Props> = ({ isOpen }) => {
         geometry: {
           type: 'Point',
           // Remember, coordinates go lng lat
-          coordinates: [
-            place.geocodes?.main.longitude ?? 0,
-            place.geocodes?.main.latitude ?? 0,
-          ],
+          coordinates: placeToPosition(place),
         },
       })),
     };
 
-    try {
-      (map?.getSource('places') as GeoJSONSource | undefined)?.setData(fc);
-    } catch (err) {
-      console.error(err);
-    }
-
-    if (places.length !== 0) {
-      const bounds = bboxToLngLatBounds(bbox(fc));
-
-      try {
-        map?.fitBounds(bounds, {
-          padding: 200,
-        });
-      } catch (err) {
-        console.error(err);
-      }
-    }
+    updateMapboxGeoJSONSource(map, MapLayerId.PLACES, fc);
   }, [map, places]);
 
   /** Add pinned places to the map */
@@ -167,21 +231,12 @@ const PanelSwitcher: FC<Props> = ({ isOpen }) => {
         geometry: {
           type: 'Point',
           // Remember, coordinates go lng lat
-          coordinates: [
-            place.geocodes?.main.longitude ?? 0,
-            place.geocodes?.main.latitude ?? 0,
-          ],
+          coordinates: placeToPosition(place),
         },
       })),
     };
 
-    try {
-      (map?.getSource('pinned-places') as GeoJSONSource | undefined)?.setData(
-        fc
-      );
-    } catch (err) {
-      console.error(err);
-    }
+    updateMapboxGeoJSONSource(map, MapLayerId.PINNED_PLACES, fc);
   }, [map, pinnedPlaces]);
 
   switch (selectedTab) {
@@ -195,6 +250,17 @@ const PanelSwitcher: FC<Props> = ({ isOpen }) => {
           title="Pinned"
           isOpen={isOpen}
         >
+          <div className="flex justify-center items-center px-6 py-4">
+            <button
+              className="bg-gray-800 px-4 py-2 rounded text-white w-full"
+              onClick={() => {
+                void handleOnCalculatePath();
+              }}
+            >
+              Find Optimal Path
+            </button>
+          </div>
+
           <PlaceList
             onCardClick={handleOnCardClick}
             places={pinnedPlaces}
@@ -221,7 +287,7 @@ const PanelSwitcher: FC<Props> = ({ isOpen }) => {
             onPin={handleOnPin}
           />
 
-          <div className="flex justify-center items-center  px-6 py-4">
+          <div className="flex justify-center items-center px-6 py-4">
             {link !== null && (
               <button
                 disabled={isLoadingMorePlaces}
