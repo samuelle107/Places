@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import Map, { type CircleLayer, Source, Layer } from 'react-map-gl';
+import Map, { Source, Layer } from 'react-map-gl';
 import React, { type FC } from 'react';
 
 import clsx from 'clsx';
@@ -9,49 +9,13 @@ import Header from '@/components/header';
 import PlaceDetails from '@/components/place-details';
 import { usePlaces } from '@/context/place-context';
 import { PlaceActionTypes } from '@/reducer/placeReducer';
-
-const placesLayer: CircleLayer = {
-  id: 'places',
-  type: 'circle',
-  paint: {
-    'circle-radius': 8,
-    'circle-color': '#9ca3af',
-    'circle-stroke-color': 'white',
-    'circle-stroke-width': 2,
-  },
-};
-
-const pinnedPlacesLayer: CircleLayer = {
-  id: 'pinned-places',
-  type: 'circle',
-  paint: {
-    'circle-radius': 8,
-    'circle-color': '#1F2937',
-    'circle-stroke-color': 'white',
-    'circle-stroke-width': 2,
-  },
-};
-
-// const contextLayer: FillLayer = {
-//   id: 'context',
-//   type: 'fill',
-//   paint: {
-//     'fill-color': '#FF5A5F',
-//     'fill-opacity': 0.2,
-//     'fill-outline-color': 'yellow',
-//   },
-// };
-
-const contextPlaceLayer: CircleLayer = {
-  id: 'context-center',
-  type: 'circle',
-  paint: {
-    'circle-color': '#3B82F6',
-    'circle-radius': 10,
-    'circle-stroke-color': 'white',
-    'circle-stroke-width': 3,
-  },
-};
+import {
+  contextPlaceLayer,
+  optimalPathLayer,
+  optimalPathLayerStroke,
+  pinnedPlacesLayer,
+  placesLayer,
+} from '@/mapbox/layers';
 
 const ExplorePage: FC = () => {
   const {
@@ -94,6 +58,11 @@ const ExplorePage: FC = () => {
             >
               {/* Mapbox sources */}
               <>
+                <Source id={optimalPathLayer.id} type="geojson">
+                  <Layer {...optimalPathLayerStroke} />
+                  <Layer {...optimalPathLayer} />
+                </Source>
+
                 <Source id={placesLayer.id} type="geojson">
                   <Layer {...placesLayer} />
                 </Source>
