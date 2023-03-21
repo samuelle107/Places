@@ -1,5 +1,6 @@
 import getPlace from '@/endpoints/places/getPlace';
 import { type FSQPlace } from '@/models/foursquare';
+import { placeToPosition } from '@/util/geospatial';
 import clsx from 'clsx';
 import React, { useEffect, type FC, useState, memo } from 'react';
 import { useMap } from 'react-map-gl';
@@ -27,10 +28,7 @@ const PlaceDetails: FC<Props> = ({
 
   const handleZoomToLocation = (): void => {
     map?.flyTo({
-      center: [
-        place.geocodes?.roof.longitude ?? 0,
-        place.geocodes?.roof.latitude ?? 0,
-      ],
+      center: placeToPosition(place),
       zoom: 20,
     });
   };
